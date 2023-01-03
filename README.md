@@ -1,4 +1,4 @@
-# A systemd top level failure handler for all system or user units, like shown in `systemd.unit(5)` `Example 3.`.
+# A systemd top level failure handler for all system or user units, as described in `systemd.unit(5)` `Example 3.`.
 
 
 ## Install
