@@ -1,15 +1,30 @@
 #!/bin/bash
 
-DIRECTORY=$(whiptail \
+DIRECTORY_TYPE=$(whiptail \
   --title "systemd failure handler installer" \
-  --radiolist "Choose an installation directory:" 15 60 4 \
-  "/etc/systemd/system" "for system units" OFF \
-  "~/.config/systemd/user" "for user units" ON \
+  --radiolist "Choose an installation directory:" 15 70 2 \
+  "system" "for system units in /etc/systemd/system " OFF \
+  "user" "for user units in ~/.config/systemd/user " ON \
   3>&1 1>&2 2>&3)
 
 if [ $? != 0 ]; then
   exit $?
 fi
+
+case "$DIRECTORY_TYPE" in
+  "system")
+    DIRECTORY="/etc/systemd/system"
+
+    if [ "$(whoami)" != "root" ]; then
+      echo "Script must be run as root for system installation."
+      exit 1
+    fi
+    ;;
+  "user")
+    DIRECTORY="$HOME/.config/systemd/user"
+    ;;
+esac
+
 
 EXECSTART=$(whiptail \
   --title "systemd failure handler installer" \
@@ -32,14 +47,9 @@ if [ $? != 0 ]; then
   exit $?
 fi
 
-if [ "$DIRECTORY" = "~/.config/systemd/user" ]; then
-  DIRECTORY="$HOME/.config/systemd/user"
-fi
-
 if [ ! -d "$DIRECTORY" ]; then
   mkdir --parents "$DIRECTORY"
 fi
-
 
 
 cat << EOF > "$DIRECTORY/failure-handler@.service"
@@ -73,5 +83,18 @@ if [ "$(whoami)" = "root" ]; then
 else
   systemctl --user daemon-reload
 fi
+
+cat << EOF > "/usr/local/bin/uninstall-systemd-failure-handler-$DIRECTORY_TYPE.sh"
+#!/bin/bash
+rm "$DIRECTORY/failure-handler@.service" || exit 1
+rm "$DIRECTORY/service.d/10-all.conf" || exit 1
+rm "$DIRECTORY/failure-handler@.service.d/10-all.conf" || exit 1
+[[ \$(ls -A "$DIRECTORY/service.d") ]] || rmdir "$DIRECTORY/service.d" || exit 1
+[[ \$(ls -A "$DIRECTORY/failure-handler@.service.d") ]] || rmdir "$DIRECTORY/failure-handler@.service.d" || exit 1
+rm "/usr/local/bin/uninstall-systemd-failure-handler-$DIRECTORY_TYPE.sh"
+whiptail --msgbox "Uninstallation complete" 8 50
+EOF
+
+chmod u+x "/usr/local/bin/uninstall-systemd-failure-handler-$DIRECTORY_TYPE.sh"
 
 whiptail --msgbox "Installation complete" 8 50
