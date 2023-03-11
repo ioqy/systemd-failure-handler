@@ -9,6 +9,12 @@ Run the installer with the following command:
 curl -fsSL https://raw.githubusercontent.com/ioqy/systemd-failure-handler/master/install.sh | sudo sh
 ```
 
+or
+
+```bash
+wget -q -O- https://raw.githubusercontent.com/ioqy/systemd-failure-handler/master/install.sh | sudo sh
+```
+
 The installer lets you choose the installation directory (either system units or user units) and set the `ExecStart` command of the failure handler unit.
 
 ## Uninstall
