@@ -64,7 +64,7 @@ EOF
 if [ ! -d "$DIRECTORY/service.d" ]; then
   mkdir --parents "$DIRECTORY/service.d"
 fi
-cat << EOF > "$DIRECTORY/service.d/10-all.conf"
+cat << EOF > "$DIRECTORY/service.d/00-failure-handler.conf"
 [Unit]
 OnFailure=failure-handler@%N.service
 EOF
@@ -74,8 +74,8 @@ if [ ! -d "$DIRECTORY/failure-handler@.service.d" ]; then
   mkdir --parents "$DIRECTORY/failure-handler@.service.d"
 fi
 
-if [ ! -e "$DIRECTORY/failure-handler@.service.d/10-all.conf" ]; then
-  ln -s /dev/null "$DIRECTORY/failure-handler@.service.d/10-all.conf"
+if [ ! -e "$DIRECTORY/failure-handler@.service.d/00-failure-handler.conf" ]; then
+  ln -s /dev/null "$DIRECTORY/failure-handler@.service.d/00-failure-handler.conf"
 fi
 
 if [ "$(whoami)" = "root" ]; then
@@ -87,8 +87,8 @@ fi
 cat << EOF > "/usr/local/bin/uninstall-systemd-failure-handler-$DIRECTORY_TYPE.sh"
 #!/bin/bash
 rm "$DIRECTORY/failure-handler@.service" || exit 1
-rm "$DIRECTORY/service.d/10-all.conf" || exit 1
-rm "$DIRECTORY/failure-handler@.service.d/10-all.conf" || exit 1
+rm "$DIRECTORY/service.d/00-failure-handler.conf" || exit 1
+rm "$DIRECTORY/failure-handler@.service.d/00-failure-handler.conf" || exit 1
 [[ \$(ls -A "$DIRECTORY/service.d") ]] || rmdir "$DIRECTORY/service.d" || exit 1
 [[ \$(ls -A "$DIRECTORY/failure-handler@.service.d") ]] || rmdir "$DIRECTORY/failure-handler@.service.d" || exit 1
 rm "/usr/local/bin/uninstall-systemd-failure-handler-$DIRECTORY_TYPE.sh"
