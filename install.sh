@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-DIRECTORY_TYPE=$(whiptail \
+directory_type=$(whiptail \
   --title "systemd failure handler installer" \
   --radiolist "Choose an installation directory:" 15 70 2 \
   "system" "for system units in /etc/systemd/system " OFF \
@@ -11,9 +11,9 @@ if [ $? != 0 ]; then
   exit $?
 fi
 
-case "$DIRECTORY_TYPE" in
+case "$directory_type" in
   "system")
-    DIRECTORY="/etc/systemd/system"
+    directory="/etc/systemd/system"
 
     if [ "$(whoami)" != "root" ]; then
       echo "Script must be run as root for system installation."
@@ -21,12 +21,12 @@ case "$DIRECTORY_TYPE" in
     fi
     ;;
   "user")
-    DIRECTORY="$HOME/.config/systemd/user"
+    directory="$HOME/.config/systemd/user"
     ;;
 esac
 
 
-EXECSTART=$(whiptail \
+execstart=$(whiptail \
   --title "systemd failure handler installer" \
   --inputbox "Enter the command to run on a unit failure (use %i for the name of the failed unit):" 15 50 \
   3>&1 1>&2 2>&3)
@@ -37,8 +37,8 @@ fi
 
 whiptail \
   --yesno "Install with the following options?\n\n\
-Directory: $DIRECTORY\n\
-Command: $EXECSTART" 15 50 \
+Directory: $directory\n\
+Command: $execstart" 15 50 \
   --defaultno \
   --yes-button "install" \
   --no-button "cancel"
@@ -47,35 +47,35 @@ if [ $? != 0 ]; then
   exit $?
 fi
 
-if [ ! -d "$DIRECTORY" ]; then
-  mkdir --parents "$DIRECTORY"
+if [ ! -d "$directory" ]; then
+  mkdir --parents "$directory"
 fi
 
 
-cat << EOF > "$DIRECTORY/failure-handler@.service"
+cat << EOF > "$directory/failure-handler@.service"
 [Unit]
 Description=Failure handler for %i
 [Service]
 Type=oneshot
 # Perform some special action for when %i exits unexpectedly.
-ExecStart=$EXECSTART
+execstart=$execstart
 EOF
 
-if [ ! -d "$DIRECTORY/service.d" ]; then
-  mkdir --parents "$DIRECTORY/service.d"
+if [ ! -d "$directory/service.d" ]; then
+  mkdir --parents "$directory/service.d"
 fi
-cat << EOF > "$DIRECTORY/service.d/00-failure-handler.conf"
+cat << EOF > "$directory/service.d/00-failure-handler.conf"
 [Unit]
 OnFailure=failure-handler@%N.service
 EOF
 
 # Prevent recursive dependency chain
-if [ ! -d "$DIRECTORY/failure-handler@.service.d" ]; then
-  mkdir --parents "$DIRECTORY/failure-handler@.service.d"
+if [ ! -d "$directory/failure-handler@.service.d" ]; then
+  mkdir --parents "$directory/failure-handler@.service.d"
 fi
 
-if [ ! -e "$DIRECTORY/failure-handler@.service.d/00-failure-handler.conf" ]; then
-  ln -s /dev/null "$DIRECTORY/failure-handler@.service.d/00-failure-handler.conf"
+if [ ! -e "$directory/failure-handler@.service.d/00-failure-handler.conf" ]; then
+  ln -s /dev/null "$directory/failure-handler@.service.d/00-failure-handler.conf"
 fi
 
 if [ "$(whoami)" = "root" ]; then
@@ -84,17 +84,17 @@ else
   systemctl --user daemon-reload
 fi
 
-cat << EOF > "/usr/local/bin/uninstall-systemd-failure-handler-$DIRECTORY_TYPE.sh"
-#!/bin/bash
-rm "$DIRECTORY/failure-handler@.service" || exit 1
-rm "$DIRECTORY/service.d/00-failure-handler.conf" || exit 1
-rm "$DIRECTORY/failure-handler@.service.d/00-failure-handler.conf" || exit 1
-[[ \$(ls -A "$DIRECTORY/service.d") ]] || rmdir "$DIRECTORY/service.d" || exit 1
-[[ \$(ls -A "$DIRECTORY/failure-handler@.service.d") ]] || rmdir "$DIRECTORY/failure-handler@.service.d" || exit 1
-rm "/usr/local/bin/uninstall-systemd-failure-handler-$DIRECTORY_TYPE.sh"
+cat << EOF > "/usr/local/bin/uninstall-systemd-failure-handler-$directory_type.sh"
+#!/usr/bin/env bash
+rm "$directory/failure-handler@.service" || exit 1
+rm "$directory/service.d/00-failure-handler.conf" || exit 1
+rm "$directory/failure-handler@.service.d/00-failure-handler.conf" || exit 1
+[[ \$(ls -A "$directory/service.d") ]] || rmdir "$directory/service.d" || exit 1
+[[ \$(ls -A "$directory/failure-handler@.service.d") ]] || rmdir "$directory/failure-handler@.service.d" || exit 1
+rm "/usr/local/bin/uninstall-systemd-failure-handler-$directory_type.sh"
 whiptail --msgbox "Uninstallation complete" 8 50
 EOF
 
-chmod u+x "/usr/local/bin/uninstall-systemd-failure-handler-$DIRECTORY_TYPE.sh"
+chmod u+x "/usr/local/bin/uninstall-systemd-failure-handler-$directory_type.sh"
 
 whiptail --msgbox "Installation complete" 8 50
