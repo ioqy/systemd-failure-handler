@@ -58,7 +58,7 @@ Description=Failure handler for %i
 [Service]
 Type=oneshot
 # Perform some special action for when %i exits unexpectedly.
-execstart=$execstart
+ExecStart=$execstart
 EOF
 
 if [ ! -d "$directory/service.d" ]; then
